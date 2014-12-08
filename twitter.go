@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"sync"
 )
 
@@ -79,9 +81,13 @@ func GetFollowerIdsOfBothAccounts(followerGetter FollowerGetter, screenName1, sc
 }
 
 func main() {
+	if len(os.Args) != 3 {
+		log.Println("you need to specify the name of exactly two twitter account names at parameter")
+		return
+	}
 	token := "AAAAAAAAAAAAAAAAAAAAAPwfcQAAAAAAzkou%2FHjJNJmwdepeRq0c%2Bi3Nx6o%3DXofLt7SVvc99ulETLRA3yS2lYo8smfc6tACxEYsLUmGsrNbc9J"
 	t := NewTwitterApi(TWITTER_API_URL, token)
-	followers := Intersection(GetFollowerIds(t, "Shopify"), GetFollowerIds(t, "ShopifyPicks"))
+	followers := Intersection(GetFollowerIds(t, os.Args[0]), GetFollowerIds(t, os.Args[1]))
 	for screenName := range GetScreenNameByIds(t, followers) {
 		fmt.Println(screenName)
 	}
