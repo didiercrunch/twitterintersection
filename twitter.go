@@ -7,7 +7,7 @@ import (
 
 type FollowerGetter interface {
 	GetFollowerByCursor(screenName, cursor string) <-chan *FollowerList
-	GetGetFollowerIdsByCursor(screenName, cursor string) <-chan *FollowerIDList
+	GetFollowerIdsByCursor(screenName, cursor string) <-chan *FollowerIDList
 	GetScreenNameOfUsersByIds(ids []uint64) <-chan string
 }
 
@@ -32,7 +32,7 @@ func GetFollowerIds(followerGetter FollowerGetter, screenName string) <-chan uin
 	go func() {
 		nextCursor := "-1"
 		for nextCursor != "0" && nextCursor != "" {
-			followers := <-followerGetter.GetGetFollowerIdsByCursor(screenName, nextCursor)
+			followers := <-followerGetter.GetFollowerIdsByCursor(screenName, nextCursor)
 			nextCursor = followers.NextCursor
 			for _, follower := range followers.Followers {
 				followerC <- follower
@@ -43,7 +43,7 @@ func GetFollowerIds(followerGetter FollowerGetter, screenName string) <-chan uin
 	return followerC
 }
 
-func GetTwitterScreenNameByIds(followerGetter FollowerGetter, idsC <-chan uint64) <-chan string {
+func GetScreenNameByIds(followerGetter FollowerGetter, idsC <-chan uint64) <-chan string {
 	screenNameC := make(chan string)
 	var wg sync.WaitGroup
 
@@ -81,8 +81,8 @@ func GetFollowerIdsOfBothAccounts(followerGetter FollowerGetter, screenName1, sc
 func main() {
 	token := "AAAAAAAAAAAAAAAAAAAAAPwfcQAAAAAAzkou%2FHjJNJmwdepeRq0c%2Bi3Nx6o%3DXofLt7SVvc99ulETLRA3yS2lYo8smfc6tACxEYsLUmGsrNbc9J"
 	t := NewTwitterApi(TWITTER_API_URL, token)
-	ff := Intersection(GetFollowerIds(t, "Shopify"), GetFollowerIds(t, "ShopifyPicks"))
-	for screenName := range GetTwitterScreenNameByIds(t, ff) {
+	followers := Intersection(GetFollowerIds(t, "Shopify"), GetFollowerIds(t, "ShopifyPicks"))
+	for screenName := range GetScreenNameByIds(t, followers) {
 		fmt.Println(screenName)
 	}
 }

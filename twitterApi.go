@@ -33,7 +33,14 @@ func (t *TwitterApi) encodeParams(params map[string]string) string {
 		q.Set(k, v)
 	}
 	return q.Encode()
+}
 
+func (t *TwitterApi) asCommaSeparatedString(lst []uint64) string {
+	lstAsString := make([]string, len(lst))
+	for i, n := range lst {
+		lstAsString[i] = fmt.Sprintf("%v", n)
+	}
+	return strings.Join(lstAsString, ",")
 }
 
 func (t *TwitterApi) createGetPathAndParams(apiEndpoint string, params map[string]string) string {
@@ -70,7 +77,7 @@ func (t *TwitterApi) Post(path_ string, body string) (resp *http.Response, err e
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+t.AccessToken)
-	req.Header.Set("content-type", "application/json; charset=utf-8")
+	req.Header.Set("content-type", "application/x-www-form-urlencoded")
 	return http.DefaultClient.Do(req)
 }
 
@@ -146,7 +153,7 @@ func (t *TwitterApi) GetFollowerByCursor(screenName, cursor string) <-chan *Foll
 	return followerListC
 }
 
-func (t *TwitterApi) GetGetFollowerIdsByCursor(screenName, cursor string) <-chan *FollowerIDList {
+func (t *TwitterApi) GetFollowerIdsByCursor(screenName, cursor string) <-chan *FollowerIDList {
 	followerListC := make(chan *FollowerIDList)
 
 	go func() {
@@ -158,7 +165,7 @@ func (t *TwitterApi) GetGetFollowerIdsByCursor(screenName, cursor string) <-chan
 		} else if twitterErr, ok := err.(*TwitterErr); ok && twitterErr.Status == 429 {
 			log.Println("api limit reached, need to sleep")
 			time.Sleep(5 * 60 * time.Second)
-			followerListC <- <-t.GetGetFollowerIdsByCursor(screenName, cursor)
+			followerListC <- <-t.GetFollowerIdsByCursor(screenName, cursor)
 		} else {
 			log.Println(err)
 			followerListC <- nil
@@ -175,9 +182,9 @@ func (t *TwitterApi) GetScreenNameOfUsersByIds(ids []uint64) <-chan string {
 	screenNameC := make(chan string)
 	go func() {
 		path := "/users/lookup.json"
-		params := map[string]string{"include_entities": "false", "user_id": t.asCommaSeparatedString(ids)}
+		params := map[string]string{"user_id": t.asCommaSeparatedString(ids)}
 		users := make([]*User, 0, len(ids))
-		if err := t.PostAndDeserialize(path, params, users); err == nil {
+		if err := t.PostAndDeserialize(path, params, &users); err == nil {
 			for _, user := range users {
 				screenNameC <- user.ScreenName
 			}
@@ -193,12 +200,4 @@ func (t *TwitterApi) GetScreenNameOfUsersByIds(ids []uint64) <-chan string {
 
 	}()
 	return screenNameC
-}
-
-func (t *TwitterApi) asCommaSeparatedString(lst []uint64) string {
-	lstAsString := make([]string, len(lst))
-	for i, n := range lst {
-		lstAsString[i] = fmt.Sprintf("%v", n)
-	}
-	return strings.Join(lstAsString, ",")
 }
