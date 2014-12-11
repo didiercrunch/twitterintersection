@@ -87,7 +87,7 @@ func main() {
 	}
 	token := "AAAAAAAAAAAAAAAAAAAAAPwfcQAAAAAAzkou%2FHjJNJmwdepeRq0c%2Bi3Nx6o%3DXofLt7SVvc99ulETLRA3yS2lYo8smfc6tACxEYsLUmGsrNbc9J"
 	t := NewTwitterApi(TWITTER_API_URL, token)
-	followers := Intersection(GetFollowerIds(t, os.Args[0]), GetFollowerIds(t, os.Args[1]))
+	followers := Intersection(GetFollowerIds(t, os.Args[1]), GetFollowerIds(t, os.Args[2]))
 	for screenName := range GetScreenNameByIds(t, followers) {
 		fmt.Println(screenName)
 	}
